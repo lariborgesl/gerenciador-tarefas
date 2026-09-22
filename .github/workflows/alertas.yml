@@ -1,0 +1,42 @@
+name: Alertas Discord
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  alerta:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enviar alerta para Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REPOSITORY: ${{ github.repository }}
+          AUTHOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          mensagem = (
+              "🚀 Novo commit na branch main!\n"
+              f"📦 Repositório: {os.environ['REPOSITORY']}\n"
+              f"👤 Autor: {os.environ['AUTHOR']}\n"
+              f"📝 Commit: {os.environ['COMMIT_MESSAGE']}"
+          )
+
+          dados = json.dumps({"content": mensagem}).encode("utf-8")
+
+          requisicao = urllib.request.Request(
+              os.environ["DISCORD_WEBHOOK"],
+              data=dados,
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+
+          urllib.request.urlopen(requisicao)
+          PY
